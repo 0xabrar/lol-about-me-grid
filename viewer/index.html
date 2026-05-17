@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Local League of Legends Teemo skin viewer prototype."
+    >
+    <title>Teemo Skin Viewer Prototype</title>
+    <base href="/">
+    <link rel="icon" href="data:,">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Marcellus&family=Source+Sans+3:wght@400..900&display=swap"
+    >
+    <link rel="stylesheet" href="styles.css">
+    <script
+      type="module"
+      src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"
+    ></script>
+  </head>
+  <body class="viewer-body">
+    <main class="viewer-shell">
+      <section class="viewer-workspace" aria-label="3D skin viewer prototype">
+        <header class="viewer-header">
+          <a class="button secondary viewer-home" href="/">Grid</a>
+          <div class="viewer-title">
+            <p class="eyebrow">Skin Viewer</p>
+            <h1 id="viewer-skin-title">Teemo</h1>
+          </div>
+          <div id="viewer-status" class="viewer-status" aria-live="polite">Loading</div>
+        </header>
+
+        <div class="viewer-layout">
+          <section class="viewer-stage" aria-label="Teemo 3D model">
+            <model-viewer
+              id="skin-model"
+              alt="Teemo 3D model"
+              camera-controls
+              touch-action="pan-y"
+              autoplay
+              auto-rotate
+              shadow-intensity="0.7"
+              shadow-softness="0.75"
+              exposure="1.02"
+              environment-image="neutral"
+              camera-orbit="24deg 72deg 6m"
+              camera-target="0m 1m 0m"
+              min-camera-orbit="auto 18deg 2.2m"
+              max-camera-orbit="auto 92deg 12m"
+              field-of-view="30deg"
+            >
+              <div slot="progress-bar" class="model-progress" aria-hidden="true">
+                <span id="model-progress-fill"></span>
+              </div>
+            </model-viewer>
+          </section>
+
+          <aside class="viewer-side" aria-label="Viewer controls">
+            <section class="viewer-control-group">
+              <div class="viewer-control-head">
+                <h2>Skin</h2>
+                <span id="skin-count">0 skins</span>
+              </div>
+              <label class="viewer-field">
+                <span class="sr-only">Teemo skin</span>
+                <select id="skin-select"></select>
+              </label>
+              <div class="skin-card">
+                <div id="skin-mark" class="skin-mark">T</div>
+                <div>
+                  <strong id="current-skin-name">Teemo</strong>
+                  <span id="current-skin-meta">Local GLB</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="viewer-control-group">
+              <div class="viewer-control-head">
+                <h2>Animation</h2>
+                <span id="animation-count">0</span>
+              </div>
+              <label class="viewer-field">
+                <span class="sr-only">Animation</span>
+                <select id="animation-select" disabled>
+                  <option>Loading animations...</option>
+                </select>
+              </label>
+              <div class="viewer-row">
+                <button id="play-toggle" class="button primary" type="button" disabled>Pause</button>
+                <button id="reset-camera" class="button secondary" type="button">Reset camera</button>
+              </div>
+              <label class="viewer-range-label" for="animation-time">
+                <span>Time</span>
+                <span id="animation-time-label">0.0s</span>
+              </label>
+              <input id="animation-time" class="viewer-range" type="range" min="0" max="1000" value="0" disabled>
+            </section>
+
+            <section class="viewer-control-group">
+              <div class="viewer-control-head">
+                <h2>Camera</h2>
+                <span>Orbit</span>
+              </div>
+              <label class="viewer-check">
+                <input id="auto-rotate" type="checkbox" checked>
+                <span>Auto rotate</span>
+              </label>
+              <label class="viewer-check">
+                <input id="tone-toggle" type="checkbox" checked>
+                <span>Stage lighting</span>
+              </label>
+            </section>
+          </aside>
+        </div>
+
+        <p class="viewer-disclaimer">
+          League of Legends assets are owned by Riot Games. This is a local prototype and is not endorsed by Riot Games.
+        </p>
+      </section>
+    </main>
+
+    <script type="module" src="viewer.js"></script>
+  </body>
+</html>

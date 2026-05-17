@@ -7,9 +7,11 @@ const port = Number(process.env.PORT || 4173);
 
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
+  ".glb": "model/gltf-binary",
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".png": "image/png",
+  ".webp": "image/webp",
 };
 
 function sendFile(response, filePath) {
@@ -21,6 +23,13 @@ function sendFile(response, filePath) {
 
 function resolvePath(urlPath) {
   const pathname = decodeURIComponent(urlPath.split("?")[0]);
+  const routeFile = pathname === "/viewer" || pathname === "/viewer/" ? "viewer/index.html" : "";
+
+  if (routeFile) {
+    const routePath = resolve(root, routeFile);
+    return existsSync(routePath) ? routePath : null;
+  }
+
   const safePath = normalize(pathname).replace(/^(\.\.[/\\])+/, "");
   const requested = resolve(root, `.${safePath}`);
 
