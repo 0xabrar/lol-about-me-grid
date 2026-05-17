@@ -70,14 +70,6 @@ function clearToastPreviewUrl() {
   }
 }
 
-function formatBytes(bytes) {
-  if (bytes < 1024 * 1024) {
-    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  }
-
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 function showToast(message, champion = null, detail = "") {
   clearToastPreviewUrl();
   elements.toast.textContent = "";
@@ -115,7 +107,7 @@ function showToast(message, champion = null, detail = "") {
   }, 1500);
 }
 
-function showClipboardPreviewToast(previewUrl, blob) {
+function showClipboardPreviewToast(previewUrl) {
   clearToastPreviewUrl();
   toastPreviewUrl = previewUrl;
   elements.toast.textContent = "";
@@ -136,7 +128,7 @@ function showClipboardPreviewToast(previewUrl, blob) {
 
   const meta = document.createElement("span");
   meta.className = "toast-meta";
-  meta.textContent = `${formatBytes(blob.size)} PNG ready to paste.`;
+  meta.textContent = "Ready to paste as an image.";
   copy.append(meta);
 
   elements.toast.append(copy);
@@ -795,7 +787,7 @@ function bindEvents() {
     try {
       const image = await copyGridImageToClipboard();
       showActionSuccess(elements.copyImage, "Copied", "Grid image copied");
-      showClipboardPreviewToast(image.previewUrl, image.blob);
+      showClipboardPreviewToast(image.previewUrl);
     } catch (error) {
       console.error(error);
       restoreActionButton(elements.copyImage);
