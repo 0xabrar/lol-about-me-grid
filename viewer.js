@@ -200,6 +200,7 @@ const defaultCamera = {
 
 let activeSkin = viewerCatalog.skins[0];
 let isModelLoading = false;
+let activeAnimationDuration = 0;
 
 function setStatus(value) {
   status.textContent = value;
@@ -290,6 +291,11 @@ function resetAnimationControls(message = "Loading animations...") {
   syncPlayButton();
 }
 
+function syncAnimationDuration() {
+  activeAnimationDuration = model.duration || 0;
+  animationTime.max = activeAnimationDuration > 0 ? String(Math.round(activeAnimationDuration * 1000)) : "0";
+}
+
 function updateSkinDetails(skin) {
   title.textContent = skin.name;
   skinSelect.value = skin.id;
@@ -376,6 +382,8 @@ function populateAnimations() {
   const initialAnimation = preferredAnimationName(animations);
   model.animationName = initialAnimation;
   animationSelect.value = initialAnimation;
+  model.currentTime = 0;
+  syncAnimationDuration();
   animationSelect.disabled = false;
   playToggle.disabled = false;
   animationTime.disabled = false;
@@ -427,6 +435,8 @@ skinSelect.addEventListener("change", () => {
 animationSelect.addEventListener("change", () => {
   model.animationName = animationSelect.value;
   model.currentTime = 0;
+  syncAnimationDuration();
+  animationTime.value = "0";
   model.play();
   syncPlayButton();
 });
@@ -462,19 +472,20 @@ toneToggle.addEventListener("change", () => {
 });
 
 animationTime.addEventListener("input", () => {
-  if (!model.duration) {
+  if (!activeAnimationDuration) {
     return;
   }
 
-  model.currentTime = (Number(animationTime.value) / 1000) * model.duration;
+  model.currentTime = Math.min(Number(animationTime.value) / 1000, activeAnimationDuration);
 });
 
 function updateTimeControls() {
-  const duration = model.duration || 0;
+  syncAnimationDuration();
+  const duration = activeAnimationDuration;
   const currentTime = model.currentTime || 0;
 
   if (duration > 0 && !animationTime.matches(":active")) {
-    animationTime.value = String(Math.round((currentTime / duration) * 1000));
+    animationTime.value = String(Math.min(Math.round(currentTime * 1000), Number(animationTime.max)));
   }
 
   animationTimeLabel.textContent = `${formatSeconds(currentTime)} / ${formatSeconds(duration)}`;
