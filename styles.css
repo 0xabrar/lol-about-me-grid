@@ -126,8 +126,8 @@ button {
 }
 
 .search-wrap input:focus {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgba(10, 200, 185, 0.16);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(200, 155, 60, 0.18);
 }
 
 .champion-filters {
