@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Build and share a League of Legends about-me champion grid."
+    >
+    <title>About Me: League of Legends</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="champion-panel" aria-label="Champion picker">
+        <div class="panel-head">
+          <h1>Champions</h1>
+          <p id="champion-count" class="panel-meta">Loading...</p>
+        </div>
+
+        <label class="search-wrap">
+          <span class="sr-only">Search champions</span>
+          <input id="champion-search" type="search" placeholder="Search champions..." autocomplete="off">
+        </label>
+
+        <div id="champion-filters" class="champion-filters" aria-label="Filter champions by position"></div>
+
+        <div id="champion-list" class="champion-list" aria-live="polite"></div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div class="progress" aria-live="polite">
+            <span id="progress-count" class="progress-count">0</span>
+            <span class="progress-sep">of</span>
+            <span class="progress-total">18</span>
+            <span class="progress-label">slots filled</span>
+          </div>
+          <div class="actions">
+            <button id="copy-link" class="button secondary" type="button">Copy share link</button>
+            <button id="export-png" class="button primary" type="button">Export PNG</button>
+          </div>
+        </header>
+
+        <section class="status-strip" aria-live="polite">
+          <div class="status-meta">
+            <span class="status-label">Now editing</span>
+            <strong id="selected-slot-name">First Main</strong>
+          </div>
+          <button id="clear-slot" class="text-button" type="button">Clear slot</button>
+        </section>
+
+        <section id="capture-area" class="grid-card" aria-label="League of Legends about me grid">
+          <header class="grid-title">
+            <h2>About Me</h2>
+            <p>League of Legends</p>
+          </header>
+          <div id="profile-grid" class="profile-grid"></div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="data/champions.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
