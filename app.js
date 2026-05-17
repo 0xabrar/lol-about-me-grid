@@ -37,6 +37,12 @@ const state = {
   picks: {},
 };
 
+const championsById = new Map(state.champions.map((champion) => [champion.id, champion]));
+const championIndexesById = new Map(
+  state.champions.map((champion, index) => [champion.id, index])
+);
+const slotsById = new Map(slots.map((slot) => [slot.id, slot]));
+
 const shareAlphabet = "0123456789abcdefghjkmnpqrstvwxyz";
 
 const elements = {
@@ -90,16 +96,68 @@ function showToast(message, champion = null, detail = "") {
   }, 1500);
 }
 
+const actionFeedbackTimers = new WeakMap();
+
+function defaultButtonLabel(button) {
+  if (!button.dataset.defaultLabel) {
+    button.dataset.defaultLabel = button.textContent.trim();
+  }
+
+  return button.dataset.defaultLabel;
+}
+
+function clearActionFeedback(button) {
+  const timeout = actionFeedbackTimers.get(button);
+  if (timeout) {
+    window.clearTimeout(timeout);
+    actionFeedbackTimers.delete(button);
+  }
+}
+
+function restoreActionButton(button) {
+  button.disabled = false;
+  button.classList.remove("is-confirmed");
+  button.textContent = defaultButtonLabel(button);
+  button.removeAttribute("aria-label");
+}
+
+function setActionButtonBusy(button, label) {
+  defaultButtonLabel(button);
+  clearActionFeedback(button);
+  button.classList.remove("is-confirmed");
+  button.removeAttribute("aria-label");
+  button.disabled = true;
+  button.textContent = label;
+}
+
+function showActionSuccess(button, successLabel, accessibleLabel) {
+  defaultButtonLabel(button);
+  clearActionFeedback(button);
+  button.disabled = false;
+  button.textContent = successLabel;
+  button.setAttribute("aria-label", accessibleLabel || successLabel);
+  button.classList.add("is-confirmed");
+
+  const timeout = window.setTimeout(() => {
+    button.classList.remove("is-confirmed");
+    button.removeAttribute("aria-label");
+    button.textContent = button.dataset.defaultLabel || button.textContent;
+    actionFeedbackTimers.delete(button);
+  }, 1500);
+
+  actionFeedbackTimers.set(button, timeout);
+}
+
 function selectedSlot() {
-  return slots.find((slot) => slot.id === state.selectedSlotId) || slots[0];
+  return slotsById.get(state.selectedSlotId) || slots[0];
 }
 
 function championById(id) {
-  return state.champions.find((champion) => champion.id === id);
+  return championsById.get(id);
 }
 
 function championIndexById(id) {
-  return state.champions.findIndex((champion) => champion.id === id);
+  return championIndexesById.has(id) ? championIndexesById.get(id) : -1;
 }
 
 function obfuscationByte(index) {
@@ -281,7 +339,7 @@ function loadState() {
 }
 
 function renderChampionFilters() {
-  elements.championFilters.innerHTML = "";
+  const fragment = document.createDocumentFragment();
   filters.forEach((filter) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -292,8 +350,9 @@ function renderChampionFilters() {
       renderChampionFilters();
       renderChampionList();
     });
-    elements.championFilters.append(button);
+    fragment.append(button);
   });
+  elements.championFilters.replaceChildren(fragment);
 }
 
 function visibleChampions() {
@@ -336,6 +395,38 @@ function updatePickedBadges() {
   });
 }
 
+function placeChampion(championId) {
+  const champion = championById(championId);
+  if (!champion) return;
+
+  const slot = selectedSlot();
+  state.picks[state.selectedSlotId] = champion.id;
+  saveState();
+  renderGrid();
+  showToast(champion.name, champion, `Placed in ${slot.label}`);
+}
+
+function selectGridSlot(slotId) {
+  if (!slotsById.has(slotId)) return;
+
+  state.selectedSlotId = slotId;
+  renderGrid();
+  const newSelected = elements.profileGrid.querySelector(
+    ".grid-slot.is-selected.has-champion"
+  );
+  newSelected?.classList.add("just-selected");
+}
+
+function clearGridSlot(slotId) {
+  const slot = slotsById.get(slotId);
+  if (!slot) return;
+
+  delete state.picks[slot.id];
+  saveState();
+  renderGrid();
+  showToast(slot.label, null, "Slot cleared");
+}
+
 function renderChampionList() {
   const champions = visibleChampions();
   const counts = pickCounts();
@@ -352,6 +443,7 @@ function renderChampionList() {
     return;
   }
 
+  const fragment = document.createDocumentFragment();
   champions.forEach((champion) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -359,24 +451,19 @@ function renderChampionList() {
     button.title = `Place ${champion.name} in ${selectedSlot().label}`;
     button.dataset.championId = champion.id;
     button.innerHTML = `
-      <img src="${championImageUrl(champion)}" alt="">
-      <span>${champion.name}</span>
+      <img src="${championImageUrl(champion)}" alt="" loading="lazy" decoding="async" width="120" height="120">
+      <span class="champion-name">${champion.name}</span>
     `;
     applyPickedBadge(button, counts[champion.id] || 0);
-    button.addEventListener("click", () => {
-      state.picks[state.selectedSlotId] = champion.id;
-      saveState();
-      renderGrid();
-      showToast(champion.name, champion, `Placed in ${selectedSlot().label}`);
-    });
-    elements.championList.append(button);
+    fragment.append(button);
   });
+  elements.championList.append(fragment);
 }
 
 function renderGrid() {
-  elements.profileGrid.innerHTML = "";
   elements.progressCount.textContent = slots.filter((slot) => state.picks[slot.id]).length;
   updatePickedBadges();
+  const fragment = document.createDocumentFragment();
 
   slots.forEach((slot) => {
     const champion = championById(state.picks[slot.id]);
@@ -388,12 +475,13 @@ function renderGrid() {
     ].filter(Boolean).join(" ");
     cell.setAttribute("role", "button");
     cell.tabIndex = 0;
+    cell.dataset.slotId = slot.id;
     cell.setAttribute("aria-label", `${slot.label}${champion ? `: ${champion.name}` : ": empty"}`);
     cell.innerHTML = `
       <div class="slot-art">
         ${
           champion
-            ? `<img src="${championImageUrl(champion)}" alt="">
+            ? `<img src="${championImageUrl(champion)}" alt="" decoding="async" width="240" height="240">
               <span class="slot-champion-name">${champion.name}</span>
               ${
                 state.selectedSlotId === slot.id
@@ -405,7 +493,7 @@ function renderGrid() {
                     </button>`
                   : ""
               }`
-            : `<span class="empty-text">Click to Add</span>`
+            : `<span class="empty-text">Click to add</span>`
         }
       </div>
       <div class="slot-label">
@@ -413,29 +501,9 @@ function renderGrid() {
       </div>
     `;
 
-    cell.addEventListener("click", () => {
-      state.selectedSlotId = slot.id;
-      renderGrid();
-    });
-    cell.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        state.selectedSlotId = slot.id;
-        renderGrid();
-      }
-    });
-
-    const clearButton = cell.querySelector(".slot-clear");
-    clearButton?.addEventListener("click", (event) => {
-      event.stopPropagation();
-      delete state.picks[slot.id];
-      saveState();
-      renderGrid();
-      showToast(slot.label, null, "Slot cleared");
-    });
-
-    elements.profileGrid.append(cell);
+    fragment.append(cell);
   });
+  elements.profileGrid.replaceChildren(fragment);
 }
 
 function canvasText(ctx, text, x, y, maxWidth, lineHeight) {
@@ -473,7 +541,20 @@ function loadCanvasImage(src) {
   });
 }
 
+const canvasFontFamilies = {
+  display: "'Marcellus', Optima, Georgia, serif",
+  ui: "'Source Sans 3', 'Segoe UI', sans-serif",
+};
+
+function canvasFont(weight, size, family = canvasFontFamilies.ui) {
+  return `${weight} ${size}px ${family}`;
+}
+
 async function exportGridPng() {
+  if (document.fonts?.ready) {
+    await document.fonts.ready;
+  }
+
   const scale = 2;
   const width = 1800;
   const titleHeight = 132;
@@ -500,7 +581,7 @@ async function exportGridPng() {
   ctx.fillRect(0, 0, width, height);
 
   ctx.fillStyle = "#f4efe3";
-  ctx.font = "900 46px Trebuchet MS, sans-serif";
+  ctx.font = canvasFont(400, 50, canvasFontFamilies.display);
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("About Me: League of Legends", width / 2, 58);
@@ -513,12 +594,13 @@ async function exportGridPng() {
   ctx.stroke();
 
   const imageCache = new Map();
-  for (const championId of Object.values(state.picks)) {
+  const championIds = [...new Set(Object.values(state.picks).filter(Boolean))];
+  await Promise.all(championIds.map(async (championId) => {
     const champion = championById(championId);
     if (champion && !imageCache.has(champion.id)) {
       imageCache.set(champion.id, await loadCanvasImage(championImageUrl(champion)));
     }
-  }
+  }));
 
   slots.forEach((slot, index) => {
     const col = index % columns;
@@ -542,7 +624,7 @@ async function exportGridPng() {
       const sourceY = (image.height - size) / 2;
       ctx.drawImage(image, sourceX, sourceY, size, size, imageX, imageY, imageSize, imageSize);
 
-      ctx.font = "900 16px Trebuchet MS, sans-serif";
+      ctx.font = canvasFont(700, 16);
       const chipWidth = Math.min(imageSize - 12, ctx.measureText(champion.name).width + 26);
       ctx.fillStyle = "rgba(0, 0, 0, 0.62)";
       ctx.fillRect(imageX + 8, imageY + 8, chipWidth, 30);
@@ -551,15 +633,15 @@ async function exportGridPng() {
       ctx.fillText(champion.name, imageX + 21, imageY + 28);
     } else {
       ctx.fillStyle = "#d1d8df";
-      ctx.font = "900 26px Trebuchet MS, sans-serif";
+      ctx.font = canvasFont(700, 24);
       ctx.textAlign = "center";
-      ctx.fillText("Click to Add", artX + cellWidth / 2, artY + imageHeight / 2);
+      ctx.fillText("Click to add", artX + cellWidth / 2, artY + imageHeight / 2);
     }
 
     ctx.fillStyle = "rgba(5, 6, 8, 0.96)";
     ctx.fillRect(x, y + imageHeight, cellWidth, labelHeight);
     ctx.fillStyle = "#fffaf0";
-    ctx.font = "900 20px Trebuchet MS, sans-serif";
+    ctx.font = canvasFont(700, 20);
     ctx.textAlign = "center";
     canvasText(ctx, slot.label, x + cellWidth / 2, y + imageHeight + labelHeight / 2, cellWidth - 28, 21);
 
@@ -570,34 +652,77 @@ async function exportGridPng() {
 
   const link = document.createElement("a");
   link.download = "league-about-me-grid.png";
-  link.href = canvas.toDataURL("image/png");
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob((result) => {
+      if (result) {
+        resolve(result);
+      } else {
+        reject(new Error("Could not export PNG"));
+      }
+    }, "image/png");
+  });
+  const url = URL.createObjectURL(blob);
+  link.href = url;
   link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function bindEvents() {
+  elements.championList.addEventListener("click", (event) => {
+    const tile = event.target.closest(".champion-tile");
+    if (!tile || !elements.championList.contains(tile)) return;
+    placeChampion(tile.dataset.championId);
+  });
+
+  elements.profileGrid.addEventListener("click", (event) => {
+    const cell = event.target.closest(".grid-slot");
+    if (!cell || !elements.profileGrid.contains(cell)) return;
+
+    if (event.target.closest(".slot-clear")) {
+      clearGridSlot(cell.dataset.slotId);
+      return;
+    }
+
+    selectGridSlot(cell.dataset.slotId);
+  });
+
+  elements.profileGrid.addEventListener("keydown", (event) => {
+    if (event.target.closest(".slot-clear")) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+
+    const cell = event.target.closest(".grid-slot");
+    if (!cell || !elements.profileGrid.contains(cell)) return;
+
+    event.preventDefault();
+    selectGridSlot(cell.dataset.slotId);
+  });
+
   elements.championSearch.addEventListener("input", (event) => {
     state.search = event.target.value;
     renderChampionList();
   });
 
   elements.copyLink.addEventListener("click", async () => {
-    saveState();
-    await navigator.clipboard.writeText(shareUrl());
-    showToast("Share link copied.");
+    try {
+      saveState();
+      await navigator.clipboard.writeText(shareUrl());
+      showActionSuccess(elements.copyLink, "Copied", "Share link copied");
+    } catch (error) {
+      console.error(error);
+      restoreActionButton(elements.copyLink);
+      showToast("Copy failed. Try again from your browser.");
+    }
   });
 
   elements.exportPng.addEventListener("click", async () => {
-    elements.exportPng.disabled = true;
-    elements.exportPng.textContent = "Exporting...";
+    setActionButtonBusy(elements.exportPng, "Exporting...");
     try {
       await exportGridPng();
-      showToast("PNG exported.");
+      showActionSuccess(elements.exportPng, "Exported", "PNG exported");
     } catch (error) {
       console.error(error);
+      restoreActionButton(elements.exportPng);
       showToast("Export failed. Try again after portraits finish loading.");
-    } finally {
-      elements.exportPng.disabled = false;
-      elements.exportPng.textContent = "Export PNG";
     }
   });
 }
