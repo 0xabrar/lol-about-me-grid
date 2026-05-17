@@ -104,6 +104,22 @@ function championIndexById(id) {
   return state.champions.findIndex((champion) => champion.id === id);
 }
 
+function obfuscationByte(index) {
+  let value = (index + 1) * 1103515245 + 12345;
+  value ^= value >>> 16;
+  value = Math.imul(value, 2246822519);
+  value ^= value >>> 13;
+  return value & 255;
+}
+
+function obfuscateBytes(bytes) {
+  return bytes.map((byte, index) => byte ^ obfuscationByte(index));
+}
+
+function deobfuscateBytes(bytes) {
+  return obfuscateBytes(bytes);
+}
+
 function groupCode(value) {
   return value;
 }
@@ -183,7 +199,7 @@ function encodePicks() {
     return index >= 0 ? index + 1 : 0;
   });
 
-  return toFriendlyCode(bytes);
+  return toFriendlyCode(obfuscateBytes(bytes));
 }
 
 function decodePicks(value) {
@@ -192,7 +208,7 @@ function decodePicks(value) {
   try {
     let bytes;
     try {
-      bytes = fromFriendlyCode(value);
+      bytes = deobfuscateBytes(fromFriendlyCode(value));
     } catch {
       bytes = fromLegacyBase64Url(value);
     }
