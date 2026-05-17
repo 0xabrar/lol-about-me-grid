@@ -252,6 +252,7 @@ function loadState() {
   const pathMatch = location.pathname.match(/^\/g\/([^/]+)\/?$/);
   if (pathMatch) {
     decodePicks(pathMatch[1]);
+    saveState({ updateHash: true });
     return;
   }
 

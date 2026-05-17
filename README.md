@@ -17,10 +17,12 @@ A static League of Legends profile grid builder inspired by grids.fun, scoped to
 This is a dependency-free static site:
 
 ```bash
-python3 -m http.server 4173
+node server.mjs
 ```
 
 Then open `http://localhost:4173`.
+
+Use `server.mjs` for local development because it mirrors Cloudflare Pages fallback routing, so share links like `/g/abc123` load `index.html` instead of 404ing.
 
 ## Cloudflare Pages
 
