@@ -307,14 +307,48 @@ function visibleChampions() {
   });
 }
 
+function pickCounts() {
+  const counts = {};
+  Object.values(state.picks).forEach((id) => {
+    if (id) counts[id] = (counts[id] || 0) + 1;
+  });
+  return counts;
+}
+
+function applyPickedBadge(tile, count) {
+  tile.classList.toggle("is-picked", count > 0);
+  let badge = tile.querySelector(".tile-count");
+  if (count > 0) {
+    if (!badge) {
+      badge = document.createElement("span");
+      badge.className = "tile-count";
+      tile.append(badge);
+    }
+    badge.textContent = String(count);
+  } else if (badge) {
+    badge.remove();
+  }
+}
+
+function updatePickedBadges() {
+  const counts = pickCounts();
+  elements.championList.querySelectorAll(".champion-tile").forEach((tile) => {
+    applyPickedBadge(tile, counts[tile.dataset.championId] || 0);
+  });
+}
+
 function renderChampionList() {
   const champions = visibleChampions();
-  elements.championList.innerHTML = "";
+  const counts = pickCounts();
+  elements.championList.replaceChildren();
 
   if (!champions.length) {
-    const empty = document.createElement("p");
-    empty.className = "panel-meta";
-    empty.textContent = "No champions match that search.";
+    const empty = document.createElement("div");
+    empty.className = "champion-empty";
+    empty.innerHTML = `
+      <strong>No champions found</strong>
+      <span>Try a different search or position.</span>
+    `;
     elements.championList.append(empty);
     return;
   }
@@ -324,10 +358,12 @@ function renderChampionList() {
     button.type = "button";
     button.className = "champion-tile";
     button.title = `Place ${champion.name} in ${selectedSlot().label}`;
+    button.dataset.championId = champion.id;
     button.innerHTML = `
       <img src="${championImageUrl(champion)}" alt="">
       <span>${champion.name}</span>
     `;
+    applyPickedBadge(button, counts[champion.id] || 0);
     button.addEventListener("click", () => {
       state.picks[state.selectedSlotId] = champion.id;
       saveState();
@@ -342,6 +378,7 @@ function renderGrid() {
   elements.profileGrid.innerHTML = "";
   elements.selectedSlotName.textContent = selectedSlot().label;
   elements.progressCount.textContent = slots.filter((slot) => state.picks[slot.id]).length;
+  updatePickedBadges();
 
   slots.forEach((slot) => {
     const champion = championById(state.picks[slot.id]);
