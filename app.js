@@ -396,6 +396,9 @@ function renderGrid() {
             ? `<img src="${championImageUrl(champion)}" alt=""><span class="slot-champion-name">${champion.name}</span>`
             : `<span class="empty-text">Click to Add</span>`
         }
+      </div>
+      <div class="slot-label">
+        <span>${slot.label}</span>
         ${
           champion && state.selectedSlotId === slot.id
             ? `<button class="slot-clear" type="button" aria-label="Clear ${slot.label}" title="Clear ${slot.label}">
@@ -407,7 +410,6 @@ function renderGrid() {
             : ""
         }
       </div>
-      <div class="slot-label">${slot.label}</div>
     `;
 
     cell.addEventListener("click", () => {
