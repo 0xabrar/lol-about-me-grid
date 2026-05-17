@@ -45,9 +45,7 @@ const elements = {
   championSearch: document.querySelector("#champion-search"),
   championFilters: document.querySelector("#champion-filters"),
   profileGrid: document.querySelector("#profile-grid"),
-  selectedSlotName: document.querySelector("#selected-slot-name"),
   progressCount: document.querySelector("#progress-count"),
-  clearSlot: document.querySelector("#clear-slot"),
   copyLink: document.querySelector("#copy-link"),
   exportPng: document.querySelector("#export-png"),
   toast: document.querySelector("#toast"),
@@ -377,35 +375,63 @@ function renderChampionList() {
 
 function renderGrid() {
   elements.profileGrid.innerHTML = "";
-  elements.selectedSlotName.textContent = selectedSlot().label;
   elements.progressCount.textContent = slots.filter((slot) => state.picks[slot.id]).length;
   updatePickedBadges();
 
   slots.forEach((slot) => {
     const champion = championById(state.picks[slot.id]);
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = [
+    const cell = document.createElement("div");
+    cell.className = [
       "grid-slot",
       state.selectedSlotId === slot.id ? "is-selected" : "",
       champion ? "has-champion" : "",
     ].filter(Boolean).join(" ");
-    button.setAttribute("aria-label", `${slot.label}${champion ? `: ${champion.name}` : ": empty"}`);
-    button.innerHTML = `
+    cell.setAttribute("role", "button");
+    cell.tabIndex = 0;
+    cell.setAttribute("aria-label", `${slot.label}${champion ? `: ${champion.name}` : ": empty"}`);
+    cell.innerHTML = `
       <div class="slot-art">
         ${
           champion
             ? `<img src="${championImageUrl(champion)}" alt=""><span class="slot-champion-name">${champion.name}</span>`
             : `<span class="empty-text">Click to Add</span>`
         }
+        ${
+          champion && state.selectedSlotId === slot.id
+            ? `<button class="slot-clear" type="button" aria-label="Clear ${slot.label}" title="Clear ${slot.label}">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 3h6l1 2h4v2H4V5h4l1-2Z"></path>
+                  <path d="M6 9h12l-1 11H7L6 9Zm4 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z"></path>
+                </svg>
+              </button>`
+            : ""
+        }
       </div>
       <div class="slot-label">${slot.label}</div>
     `;
-    button.addEventListener("click", () => {
+
+    cell.addEventListener("click", () => {
       state.selectedSlotId = slot.id;
       renderGrid();
     });
-    elements.profileGrid.append(button);
+    cell.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        state.selectedSlotId = slot.id;
+        renderGrid();
+      }
+    });
+
+    const clearButton = cell.querySelector(".slot-clear");
+    clearButton?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      delete state.picks[slot.id];
+      saveState();
+      renderGrid();
+      showToast(slot.label, null, "Slot cleared");
+    });
+
+    elements.profileGrid.append(cell);
   });
 }
 
@@ -549,13 +575,6 @@ function bindEvents() {
   elements.championSearch.addEventListener("input", (event) => {
     state.search = event.target.value;
     renderChampionList();
-  });
-
-  elements.clearSlot.addEventListener("click", () => {
-    delete state.picks[state.selectedSlotId];
-    saveState();
-    renderGrid();
-    showToast(`${selectedSlot().label} cleared.`);
   });
 
   elements.copyLink.addEventListener("click", async () => {
