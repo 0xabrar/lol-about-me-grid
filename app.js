@@ -70,6 +70,14 @@ function clearToastPreviewUrl() {
   }
 }
 
+function formatBytes(bytes) {
+  if (bytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function showToast(message, champion = null, detail = "") {
   clearToastPreviewUrl();
   elements.toast.textContent = "";
@@ -107,7 +115,7 @@ function showToast(message, champion = null, detail = "") {
   }, 1500);
 }
 
-function showClipboardPreviewToast(previewUrl) {
+function showClipboardPreviewToast(previewUrl, blob) {
   clearToastPreviewUrl();
   toastPreviewUrl = previewUrl;
   elements.toast.textContent = "";
@@ -128,7 +136,7 @@ function showClipboardPreviewToast(previewUrl) {
 
   const meta = document.createElement("span");
   meta.className = "toast-meta";
-  meta.textContent = "Ready to paste as an image.";
+  meta.textContent = `${formatBytes(blob.size)} PNG ready to paste.`;
   copy.append(meta);
 
   elements.toast.append(copy);
@@ -591,6 +599,14 @@ const canvasFontFamilies = {
   ui: "'Source Sans 3', 'Segoe UI', sans-serif",
 };
 
+const clipboardImage = {
+  width: 1200,
+  titleHeight: 88,
+  columns: 6,
+  labelHeight: 44,
+  artPadding: 12,
+};
+
 function canvasFont(weight, size, family = canvasFontFamilies.ui) {
   return `${weight} ${size}px ${family}`;
 }
@@ -600,23 +616,21 @@ async function createGridPng() {
     await document.fonts.ready;
   }
 
-  const scale = 2;
-  const width = 1800;
-  const titleHeight = 132;
-  const columns = 6;
+  const width = clipboardImage.width;
+  const titleHeight = clipboardImage.titleHeight;
+  const columns = clipboardImage.columns;
   const rows = Math.ceil(slots.length / columns);
   const cellWidth = width / columns;
   const imageHeight = cellWidth;
-  const labelHeight = 64;
+  const labelHeight = clipboardImage.labelHeight;
   const cellHeight = imageHeight + labelHeight;
   const height = titleHeight + rows * cellHeight;
-  const artPadding = 18;
+  const artPadding = clipboardImage.artPadding;
 
   const canvas = document.createElement("canvas");
-  canvas.width = width * scale;
-  canvas.height = height * scale;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext("2d");
-  ctx.scale(scale, scale);
 
   const gradient = ctx.createLinearGradient(0, 0, width, height);
   gradient.addColorStop(0, "#080b10");
@@ -626,16 +640,16 @@ async function createGridPng() {
   ctx.fillRect(0, 0, width, height);
 
   ctx.fillStyle = "#f4efe3";
-  ctx.font = canvasFont(400, 50, canvasFontFamilies.display);
+  ctx.font = canvasFont(400, 34, canvasFontFamilies.display);
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("About Me: League of Legends", width / 2, 58);
+  ctx.fillText("About Me: League of Legends", width / 2, 38);
 
   ctx.strokeStyle = "rgba(200, 155, 60, 0.55)";
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.moveTo(44, titleHeight - 12);
-  ctx.lineTo(width - 44, titleHeight - 12);
+  ctx.moveTo(30, titleHeight - 8);
+  ctx.lineTo(width - 30, titleHeight - 8);
   ctx.stroke();
 
   const imageCache = new Map();
@@ -669,16 +683,16 @@ async function createGridPng() {
       const sourceY = (image.height - size) / 2;
       ctx.drawImage(image, sourceX, sourceY, size, size, imageX, imageY, imageSize, imageSize);
 
-      ctx.font = canvasFont(700, 16);
-      const chipWidth = Math.min(imageSize - 12, ctx.measureText(champion.name).width + 26);
+      ctx.font = canvasFont(700, 12);
+      const chipWidth = Math.min(imageSize - 8, ctx.measureText(champion.name).width + 18);
       ctx.fillStyle = "rgba(0, 0, 0, 0.62)";
-      ctx.fillRect(imageX + 8, imageY + 8, chipWidth, 30);
+      ctx.fillRect(imageX + 6, imageY + 6, chipWidth, 21);
       ctx.fillStyle = "#ffffff";
       ctx.textAlign = "left";
-      ctx.fillText(champion.name, imageX + 21, imageY + 28);
+      ctx.fillText(champion.name, imageX + 15, imageY + 20);
     } else {
       ctx.fillStyle = "#d1d8df";
-      ctx.font = canvasFont(700, 24);
+      ctx.font = canvasFont(700, 17);
       ctx.textAlign = "center";
       ctx.fillText("Click to add", artX + cellWidth / 2, artY + imageHeight / 2);
     }
@@ -686,12 +700,12 @@ async function createGridPng() {
     ctx.fillStyle = "rgba(5, 6, 8, 0.96)";
     ctx.fillRect(x, y + imageHeight, cellWidth, labelHeight);
     ctx.fillStyle = "#fffaf0";
-    ctx.font = canvasFont(700, 20);
+    ctx.font = canvasFont(700, 14);
     ctx.textAlign = "center";
-    canvasText(ctx, slot.label, x + cellWidth / 2, y + imageHeight + labelHeight / 2, cellWidth - 28, 21);
+    canvasText(ctx, slot.label, x + cellWidth / 2, y + imageHeight + labelHeight / 2, cellWidth - 20, 15);
 
     ctx.strokeStyle = "#050607";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.strokeRect(x, y, cellWidth, cellHeight);
   });
 
@@ -715,14 +729,18 @@ async function copyGridImageToClipboard() {
     throw new Error("Image clipboard is not supported in this browser");
   }
 
-  const image = await createGridPng();
+  const imagePromise = createGridPng();
   await navigator.clipboard.write([
     new ClipboardItem({
-      [image.blob.type]: image.blob,
+      "image/png": imagePromise.then((image) => image.blob),
     }),
   ]);
 
-  return URL.createObjectURL(image.blob);
+  const image = await imagePromise;
+  return {
+    blob: image.blob,
+    previewUrl: URL.createObjectURL(image.blob),
+  };
 }
 
 function bindEvents() {
@@ -775,9 +793,9 @@ function bindEvents() {
   elements.copyImage.addEventListener("click", async () => {
     setActionButtonBusy(elements.copyImage, "Copying...");
     try {
-      const previewUrl = await copyGridImageToClipboard();
+      const image = await copyGridImageToClipboard();
       showActionSuccess(elements.copyImage, "Copied", "Grid image copied");
-      showClipboardPreviewToast(previewUrl);
+      showClipboardPreviewToast(image.previewUrl, image.blob);
     } catch (error) {
       console.error(error);
       restoreActionButton(elements.copyImage);
