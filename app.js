@@ -195,7 +195,6 @@ function renderGrid() {
     button.addEventListener("click", () => {
       state.selectedSlotId = slot.id;
       renderGrid();
-      renderChampionList();
     });
     elements.profileGrid.append(button);
   });
