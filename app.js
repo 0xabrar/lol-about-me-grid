@@ -98,34 +98,87 @@ function championById(id) {
   return state.champions.find((champion) => champion.id === id);
 }
 
+function championIndexById(id) {
+  return state.champions.findIndex((champion) => champion.id === id);
+}
+
+function toBase64Url(bytes) {
+  const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function fromBase64Url(value) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  return Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
+}
+
 function encodePicks() {
-  return slots.map((slot) => state.picks[slot.id] || "").join(".");
+  const bytes = slots.map((slot) => {
+    const championId = state.picks[slot.id];
+    if (!championId) {
+      return 0;
+    }
+
+    const index = championIndexById(championId);
+    return index >= 0 ? index + 1 : 0;
+  });
+
+  return toBase64Url(bytes);
 }
 
 function decodePicks(value) {
-  const ids = value.split(".");
   state.picks = {};
+
+  try {
+    const bytes = fromBase64Url(value);
+    slots.forEach((slot, index) => {
+      const championIndex = bytes[index] - 1;
+      if (championIndex >= 0 && state.champions[championIndex]) {
+        state.picks[slot.id] = state.champions[championIndex].id;
+      }
+    });
+  } catch {
+    state.picks = {};
+  }
+}
+
+function decodeLegacyPicks(value) {
+  state.picks = {};
+  const ids = value.split(".");
   slots.forEach((slot, index) => {
-    if (ids[index]) {
-      state.picks[slot.id] = ids[index];
+    const championId = ids[index];
+    if (championId && championById(championId)) {
+      state.picks[slot.id] = championId;
     }
   });
+}
+
+function shareUrl() {
+  const encoded = encodePicks();
+  const hasPicks = slots.some((slot) => state.picks[slot.id]);
+  const baseUrl = `${location.origin}${location.pathname}`;
+  return hasPicks ? `${baseUrl}#g=${encoded}` : baseUrl;
 }
 
 function saveState({ updateHash = true } = {}) {
   localStorage.setItem("lol-about-me-grid", JSON.stringify(state.picks));
   if (updateHash) {
-    const encoded = encodePicks();
-    const hash = encoded.replace(/\./g, "") ? `grid=${encodeURIComponent(encoded)}` : "";
-    history.replaceState(null, "", hash ? `#${hash}` : location.pathname + location.search);
+    history.replaceState(null, "", shareUrl());
   }
 }
 
 function loadState() {
   const hashParams = new URLSearchParams(location.hash.replace(/^#/, ""));
-  const sharedGrid = hashParams.get("grid");
-  if (sharedGrid) {
-    decodePicks(sharedGrid);
+  const compactGrid = hashParams.get("g");
+  if (compactGrid) {
+    decodePicks(compactGrid);
+    return;
+  }
+
+  const legacyGrid = hashParams.get("grid");
+  if (legacyGrid) {
+    decodeLegacyPicks(legacyGrid);
     return;
   }
 
@@ -370,7 +423,7 @@ function bindEvents() {
 
   elements.copyLink.addEventListener("click", async () => {
     saveState();
-    await navigator.clipboard.writeText(location.href);
+    await navigator.clipboard.writeText(shareUrl());
     showToast("Share link copied.");
   });
 
