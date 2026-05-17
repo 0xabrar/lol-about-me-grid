@@ -55,8 +55,22 @@ function championImageUrl(champion) {
   return champion.image;
 }
 
-function showToast(message) {
-  elements.toast.textContent = message;
+function showToast(message, champion = null) {
+  elements.toast.textContent = "";
+
+  if (champion) {
+    const portrait = document.createElement("img");
+    portrait.className = "toast-portrait";
+    portrait.src = championImageUrl(champion);
+    portrait.alt = "";
+    elements.toast.append(portrait);
+  }
+
+  const copy = document.createElement("span");
+  copy.className = "toast-copy";
+  copy.textContent = message;
+  elements.toast.append(copy);
+
   elements.toast.classList.add("is-visible");
   window.clearTimeout(showToast.timeout);
   showToast.timeout = window.setTimeout(() => {
@@ -161,7 +175,7 @@ function renderChampionList() {
       state.picks[state.selectedSlotId] = champion.id;
       saveState();
       renderGrid();
-      showToast(`${champion.name} added to ${selectedSlot().label}.`);
+      showToast(`${champion.name} placed in ${selectedSlot().label}`, champion);
     });
     elements.championList.append(button);
   });
