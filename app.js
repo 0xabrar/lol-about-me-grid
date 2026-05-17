@@ -48,7 +48,6 @@ const elements = {
   clearSlot: document.querySelector("#clear-slot"),
   copyLink: document.querySelector("#copy-link"),
   exportPng: document.querySelector("#export-png"),
-  progressCount: document.querySelector("#progress-count"),
   toast: document.querySelector("#toast"),
 };
 
