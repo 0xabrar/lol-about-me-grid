@@ -10,7 +10,7 @@ A static League of Legends profile grid builder inspired by grids.fun, scoped to
 - Every cell behaves the same way: select a slot, then pick a champion.
 - Local browser persistence.
 - Copyable hash-based share links.
-- Copyable compact PNG image rendered in the browser with champion portraits.
+- Copyable PNG image rendered in the browser with champion portraits.
 
 ## Run Locally
 
