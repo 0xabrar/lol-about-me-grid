@@ -55,7 +55,7 @@ function championImageUrl(champion) {
   return champion.image;
 }
 
-function showToast(message, champion = null) {
+function showToast(message, champion = null, detail = "") {
   elements.toast.textContent = "";
 
   if (champion) {
@@ -66,16 +66,28 @@ function showToast(message, champion = null) {
     elements.toast.append(portrait);
   }
 
-  const copy = document.createElement("span");
+  const copy = document.createElement("div");
   copy.className = "toast-copy";
-  copy.textContent = message;
+
+  const title = document.createElement("span");
+  title.className = "toast-title";
+  title.textContent = message;
+  copy.append(title);
+
+  if (detail) {
+    const meta = document.createElement("span");
+    meta.className = "toast-meta";
+    meta.textContent = detail;
+    copy.append(meta);
+  }
+
   elements.toast.append(copy);
 
   elements.toast.classList.add("is-visible");
   window.clearTimeout(showToast.timeout);
   showToast.timeout = window.setTimeout(() => {
     elements.toast.classList.remove("is-visible");
-  }, 2400);
+  }, 1500);
 }
 
 function selectedSlot() {
@@ -175,7 +187,7 @@ function renderChampionList() {
       state.picks[state.selectedSlotId] = champion.id;
       saveState();
       renderGrid();
-      showToast(`${champion.name} placed in ${selectedSlot().label}`, champion);
+      showToast(champion.name, champion, `Placed in ${selectedSlot().label}`);
     });
     elements.championList.append(button);
   });
