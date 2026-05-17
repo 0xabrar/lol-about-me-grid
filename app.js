@@ -37,6 +37,8 @@ const state = {
   picks: {},
 };
 
+const shareAlphabet = "0123456789abcdefghjkmnpqrstvwxyz";
+
 const elements = {
   championCount: document.querySelector("#champion-count"),
   championList: document.querySelector("#champion-list"),
@@ -102,12 +104,69 @@ function championIndexById(id) {
   return state.champions.findIndex((champion) => champion.id === id);
 }
 
-function toBase64Url(bytes) {
-  const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+function groupCode(value) {
+  return value;
 }
 
-function fromBase64Url(value) {
+function toFriendlyCode(bytes) {
+  if (shareAlphabet.length !== 32) {
+    throw new Error("Share alphabet must contain exactly 32 characters");
+  }
+
+  let buffer = 0;
+  let bits = 0;
+  let output = "";
+
+  bytes.forEach((byte) => {
+    buffer = (buffer << 8) | byte;
+    bits += 8;
+
+    while (bits >= 5) {
+      output += shareAlphabet[(buffer >> (bits - 5)) & 31];
+      bits -= 5;
+    }
+  });
+
+  if (bits > 0) {
+    output += shareAlphabet[(buffer << (5 - bits)) & 31];
+  }
+
+  return groupCode(output);
+}
+
+function fromFriendlyCode(value) {
+  if (shareAlphabet.length !== 32) {
+    throw new Error("Share alphabet must contain exactly 32 characters");
+  }
+
+  const cleanValue = value.toLowerCase().replace(/-/g, "");
+  let buffer = 0;
+  let bits = 0;
+  const bytes = [];
+
+  for (const char of cleanValue) {
+    const index = shareAlphabet.indexOf(char);
+    if (index === -1) {
+      throw new Error("Unknown share code character");
+    }
+
+    buffer = (buffer << 5) | index;
+    bits += 5;
+
+    while (bits >= 8 && bytes.length < slots.length) {
+      bytes.push((buffer >> (bits - 8)) & 255);
+      bits -= 8;
+    }
+  }
+
+  if (bytes.length < slots.length) {
+    throw new Error("Share code is too short");
+  }
+
+  return Uint8Array.from(bytes.slice(0, slots.length));
+}
+
+function fromLegacyBase64Url(value) {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
   const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
   return Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
@@ -124,14 +183,20 @@ function encodePicks() {
     return index >= 0 ? index + 1 : 0;
   });
 
-  return toBase64Url(bytes);
+  return toFriendlyCode(bytes);
 }
 
 function decodePicks(value) {
   state.picks = {};
 
   try {
-    const bytes = fromBase64Url(value);
+    let bytes;
+    try {
+      bytes = fromFriendlyCode(value);
+    } catch {
+      bytes = fromLegacyBase64Url(value);
+    }
+
     slots.forEach((slot, index) => {
       const championIndex = bytes[index] - 1;
       if (championIndex >= 0 && state.champions[championIndex]) {
@@ -157,8 +222,7 @@ function decodeLegacyPicks(value) {
 function shareUrl() {
   const encoded = encodePicks();
   const hasPicks = slots.some((slot) => state.picks[slot.id]);
-  const baseUrl = `${location.origin}${location.pathname}`;
-  return hasPicks ? `${baseUrl}#g=${encoded}` : baseUrl;
+  return hasPicks ? `${location.origin}/g/${encoded}` : `${location.origin}/`;
 }
 
 function saveState({ updateHash = true } = {}) {
@@ -169,7 +233,14 @@ function saveState({ updateHash = true } = {}) {
 }
 
 function loadState() {
-  const hashParams = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const pathMatch = location.pathname.match(/^\/g\/([^/]+)\/?$/);
+  if (pathMatch) {
+    decodePicks(pathMatch[1]);
+    return;
+  }
+
+  const rawHash = location.hash.replace(/^#/, "");
+  const hashParams = new URLSearchParams(rawHash);
   const compactGrid = hashParams.get("g");
   if (compactGrid) {
     decodePicks(compactGrid);
@@ -179,6 +250,11 @@ function loadState() {
   const legacyGrid = hashParams.get("grid");
   if (legacyGrid) {
     decodeLegacyPicks(legacyGrid);
+    return;
+  }
+
+  if (rawHash) {
+    decodePicks(rawHash);
     return;
   }
 
@@ -316,15 +392,16 @@ function loadCanvasImage(src) {
 
 async function exportGridPng() {
   const scale = 2;
-  const width = 1440;
-  const titleHeight = 116;
+  const width = 1800;
+  const titleHeight = 132;
   const columns = 6;
   const rows = Math.ceil(slots.length / columns);
   const cellWidth = width / columns;
-  const imageHeight = 196;
-  const labelHeight = 56;
+  const imageHeight = cellWidth;
+  const labelHeight = 64;
   const cellHeight = imageHeight + labelHeight;
   const height = titleHeight + rows * cellHeight;
+  const artPadding = 18;
 
   const canvas = document.createElement("canvas");
   canvas.width = width * scale;
@@ -366,36 +443,42 @@ async function exportGridPng() {
     const x = col * cellWidth;
     const y = titleHeight + row * cellHeight;
     const champion = championById(state.picks[slot.id]);
+    const artX = x;
+    const artY = y;
+    const imageX = artX + artPadding;
+    const imageY = artY + artPadding;
+    const imageSize = cellWidth - artPadding * 2;
 
     ctx.fillStyle = champion ? "#07090d" : "#303a47";
-    ctx.fillRect(x, y, cellWidth, imageHeight);
+    ctx.fillRect(artX, artY, cellWidth, imageHeight);
 
     if (champion) {
       const image = imageCache.get(champion.id);
       const size = Math.min(image.width, image.height);
       const sourceX = (image.width - size) / 2;
       const sourceY = (image.height - size) / 2;
-      ctx.drawImage(image, sourceX, sourceY, size, size, x, y, cellWidth, imageHeight);
+      ctx.drawImage(image, sourceX, sourceY, size, size, imageX, imageY, imageSize, imageSize);
 
+      ctx.font = "900 16px Trebuchet MS, sans-serif";
+      const chipWidth = Math.min(imageSize - 12, ctx.measureText(champion.name).width + 26);
       ctx.fillStyle = "rgba(0, 0, 0, 0.62)";
-      ctx.fillRect(x + 8, y + 8, Math.min(cellWidth - 16, ctx.measureText(champion.name).width + 24), 28);
+      ctx.fillRect(imageX + 8, imageY + 8, chipWidth, 30);
       ctx.fillStyle = "#ffffff";
-      ctx.font = "900 14px Trebuchet MS, sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText(champion.name, x + 20, y + 27);
+      ctx.fillText(champion.name, imageX + 21, imageY + 28);
     } else {
       ctx.fillStyle = "#d1d8df";
-      ctx.font = "900 22px Trebuchet MS, sans-serif";
+      ctx.font = "900 26px Trebuchet MS, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("Click to Add", x + cellWidth / 2, y + imageHeight / 2);
+      ctx.fillText("Click to Add", artX + cellWidth / 2, artY + imageHeight / 2);
     }
 
     ctx.fillStyle = "rgba(5, 6, 8, 0.96)";
     ctx.fillRect(x, y + imageHeight, cellWidth, labelHeight);
     ctx.fillStyle = "#fffaf0";
-    ctx.font = "900 18px Trebuchet MS, sans-serif";
+    ctx.font = "900 20px Trebuchet MS, sans-serif";
     ctx.textAlign = "center";
-    canvasText(ctx, slot.label, x + cellWidth / 2, y + imageHeight + labelHeight / 2, cellWidth - 22, 18);
+    canvasText(ctx, slot.label, x + cellWidth / 2, y + imageHeight + labelHeight / 2, cellWidth - 28, 21);
 
     ctx.strokeStyle = "#050607";
     ctx.lineWidth = 3;
