@@ -393,22 +393,23 @@ function renderGrid() {
       <div class="slot-art">
         ${
           champion
-            ? `<img src="${championImageUrl(champion)}" alt=""><span class="slot-champion-name">${champion.name}</span>`
+            ? `<img src="${championImageUrl(champion)}" alt="">
+              <span class="slot-champion-name">${champion.name}</span>
+              ${
+                state.selectedSlotId === slot.id
+                  ? `<button class="slot-clear" type="button" aria-label="Clear ${slot.label}" title="Clear ${slot.label}">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9 3h6l1 2h4v2H4V5h4l1-2Z"></path>
+                        <path d="M6 9h12l-1 11H7L6 9Zm4 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z"></path>
+                      </svg>
+                    </button>`
+                  : ""
+              }`
             : `<span class="empty-text">Click to Add</span>`
         }
       </div>
       <div class="slot-label">
         <span>${slot.label}</span>
-        ${
-          champion && state.selectedSlotId === slot.id
-            ? `<button class="slot-clear" type="button" aria-label="Clear ${slot.label}" title="Clear ${slot.label}">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M9 3h6l1 2h4v2H4V5h4l1-2Z"></path>
-                  <path d="M6 9h12l-1 11H7L6 9Zm4 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z"></path>
-                </svg>
-              </button>`
-            : ""
-        }
       </div>
     `;
 

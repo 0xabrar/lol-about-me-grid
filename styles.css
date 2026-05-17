@@ -246,27 +246,6 @@ button {
   white-space: nowrap;
 }
 
-.tile-count {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--gold);
-  color: #1c1610;
-  font-family: var(--font-ui);
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0;
-  line-height: 1;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-}
-
 .champion-empty {
   grid-column: 1 / -1;
   display: grid;
@@ -458,6 +437,7 @@ button {
 }
 
 .slot-art {
+  position: relative;
   display: grid;
   place-items: center;
   min-width: 0;
@@ -508,11 +488,11 @@ button {
 }
 
 .slot-label {
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) 32px;
+  display: flex;
   align-items: center;
+  justify-content: center;
   min-width: 0;
-  padding: 3px 7px 7px;
+  padding: 6px 8px 8px;
   background: linear-gradient(180deg, rgba(7, 8, 10, 0.88), rgba(7, 8, 10, 0.96));
   color: #fffaf0;
   font-size: clamp(0.76rem, 0.84vw, 0.9rem);
@@ -524,15 +504,14 @@ button {
 }
 
 .slot-label > span {
-  grid-column: 2;
   min-width: 0;
 }
 
 .slot-champion-name {
   position: absolute;
-  right: 18px;
+  left: 18px;
   top: 18px;
-  max-width: calc(100% - 14px);
+  max-width: calc(100% - 70px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   padding: 4px 9px;
@@ -550,8 +529,9 @@ button {
 }
 
 .slot-clear {
-  grid-column: 3;
-  justify-self: end;
+  position: absolute;
+  top: 16px;
+  right: 16px;
   display: grid;
   width: 27px;
   height: 27px;
@@ -583,7 +563,7 @@ button {
   content: attr(aria-label);
   position: absolute;
   right: 0;
-  bottom: calc(100% + 8px);
+  top: calc(100% + 8px);
   width: max-content;
   max-width: 180px;
   border: 1px solid rgba(66, 81, 105, 0.8);
