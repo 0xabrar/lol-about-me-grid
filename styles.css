@@ -500,13 +500,14 @@ button {
 
 .skin-card {
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr);
+  grid-template-columns: 78px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
-  min-height: 68px;
+  min-height: 84px;
   border: 1px solid rgba(200, 155, 60, 0.22);
   border-radius: var(--radius);
-  padding: 10px;
+  padding: 8px 10px 8px 8px;
+  overflow: hidden;
   background: rgba(200, 155, 60, 0.08);
 }
 
@@ -533,18 +534,15 @@ button {
   line-height: 1.2;
 }
 
-.skin-mark {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
+.skin-art {
+  display: block;
+  width: 78px;
+  height: 68px;
   border: 1px solid rgba(240, 207, 119, 0.52);
-  border-radius: 50%;
-  background: linear-gradient(145deg, rgba(200, 155, 60, 0.22), rgba(10, 200, 185, 0.13));
-  color: var(--gold-2);
-  font-family: var(--font-display);
-  font-size: 1.45rem;
-  line-height: 1;
+  border-radius: 6px;
+  background: rgba(7, 10, 14, 0.88);
+  object-fit: cover;
+  object-position: 50% 18%;
 }
 
 .viewer-field {

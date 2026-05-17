@@ -1,98 +1,115 @@
 const viewerCatalog = {
   champion: "Teemo",
+  artBaseUrl: "https://ddragon.leagueoflegends.com/cdn/img/champion/loading",
   skins: [
     {
       id: "17000",
+      num: 0,
       name: "Classic Teemo",
       asset: "assets/models/teemo-default/model.glb",
       size: 9238056,
     },
     {
       id: "17001",
+      num: 1,
       name: "Happy Elf Teemo",
       asset: "assets/models/teemo-happy-elf/model.glb",
       size: 9531708,
     },
     {
       id: "17002",
+      num: 2,
       name: "Recon Teemo",
       asset: "assets/models/teemo-recon/model.glb",
       size: 8943444,
     },
     {
       id: "17003",
+      num: 3,
       name: "Badger Teemo",
       asset: "assets/models/teemo-badger/model.glb",
       size: 8825496,
     },
     {
       id: "17004",
+      num: 4,
       name: "Astronaut Teemo",
       asset: "assets/models/teemo-astronaut/model.glb",
       size: 8892844,
     },
     {
       id: "17005",
+      num: 5,
       name: "Cottontail Teemo",
       asset: "assets/models/teemo-cottontail/model.glb",
       size: 8265928,
     },
     {
       id: "17006",
+      num: 6,
       name: "Super Teemo",
       asset: "assets/models/teemo-super/model.glb",
       size: 7651788,
     },
     {
       id: "17007",
+      num: 7,
       name: "Panda Teemo",
       asset: "assets/models/teemo-panda/model.glb",
       size: 9245360,
     },
     {
       id: "17008",
+      num: 8,
       name: "Omega Squad Teemo",
       asset: "assets/models/teemo-omega-squad/model.glb",
       size: 3779064,
     },
     {
       id: "17014",
+      num: 14,
       name: "Little Devil Teemo",
       asset: "assets/models/teemo-little-devil/model.glb",
       size: 10806816,
     },
     {
       id: "17018",
+      num: 18,
       name: "Beemo",
       asset: "assets/models/teemo-beemo/model.glb",
       size: 8070764,
     },
     {
       id: "17025",
+      num: 25,
       name: "Spirit Blossom Teemo",
       asset: "assets/models/teemo-spirit-blossom/model.glb",
       size: 7867208,
     },
     {
       id: "17027",
+      num: 27,
       name: "Prestige Spirit Blossom Teemo",
       asset: "assets/models/teemo-prestige-spirit-blossom/model.glb",
       size: 7709484,
     },
     {
       id: "17037",
+      num: 37,
       name: "Firecracker Teemo",
       asset: "assets/models/teemo-firecracker/model.glb",
       size: 8009144,
     },
     {
       id: "17047",
+      num: 47,
       name: "Space Groove Teemo",
       asset: "assets/models/teemo-space-groove/model.glb",
       size: 13468724,
     },
     {
       id: "17054",
+      num: 54,
       name: "Spirit Blossom Springs Teemo",
       asset: "assets/models/teemo-spirit-blossom-springs/model.glb",
       size: 9417100,
@@ -102,22 +119,9 @@ const viewerCatalog = {
 
 const categoryRules = [
   {
-    label: "Death / Spawn",
+    label: "Idle",
     patterns: [
-      /(^|[._\-\s])(death|die|dead|died|defeat|slain|spawn|respawn)([._\-\s\d]|$)/,
-    ],
-  },
-  {
-    label: "Recall / Base",
-    patterns: [
-      /(^|[._\-\s])(recall|base|teleport|return|intro|outro|enter|exit|arrival)([._\-\s\d]|$)/,
-    ],
-  },
-  {
-    label: "Abilities",
-    patterns: [
-      /(^|[._\-\s])(spell[1-4]?|ability|passive|cast|channel)([._\-\s\d]|$)/,
-      /(^|[._\-\s])(q|w|e|r)([._\-\s\d]|$)/,
+      /(^|[._\-\s])(idle|stand|rest|neutral|breathe|breathing|wait)([._\-\s\d]|$)/,
     ],
   },
   {
@@ -127,9 +131,16 @@ const categoryRules = [
     ],
   },
   {
-    label: "Idle",
+    label: "Death / Spawn",
     patterns: [
-      /(^|[._\-\s])(idle|stand|rest|neutral|breathe|breathing|wait)([._\-\s\d]|$)/,
+      /(^|[._\-\s])(death|die|dead|died|defeat|slain|spawn|respawn)([._\-\s\d]|$)/,
+    ],
+  },
+  {
+    label: "Abilities",
+    patterns: [
+      /(^|[._\-\s])(spell[1-4]?|ability|passive|cast|channel)([._\-\s\d]|$)/,
+      /(^|[._\-\s])(q|w|e|r)([._\-\s\d]|$)/,
     ],
   },
   {
@@ -142,6 +153,12 @@ const categoryRules = [
     label: "Emotes",
     patterns: [
       /(^|[._\-\s])(joke|taunt|dance|laugh|emote|wave|point|victory|clap|cheer|celebrate)([._\-\s\d]|$)/,
+    ],
+  },
+  {
+    label: "Recall / Base",
+    patterns: [
+      /(^|[._\-\s])(recall|teleport|return|intro|outro|enter|exit|arrival)([._\-\s\d]|$)/,
     ],
   },
 ];
@@ -162,7 +179,7 @@ const status = document.querySelector("#viewer-status");
 const title = document.querySelector("#viewer-skin-title");
 const skinSelect = document.querySelector("#skin-select");
 const skinCount = document.querySelector("#skin-count");
-const skinMark = document.querySelector("#skin-mark");
+const skinArt = document.querySelector("#skin-art");
 const currentSkinName = document.querySelector("#current-skin-name");
 const currentSkinMeta = document.querySelector("#current-skin-meta");
 const progressFill = document.querySelector("#model-progress-fill");
@@ -213,8 +230,18 @@ function categoryForAnimation(name) {
 }
 
 function preferredAnimationName(names) {
+  const isStableIdle = (name) => {
+    const normalized = normalizeAnimationName(name);
+    return (
+      categoryForAnimation(name) === "Idle" &&
+      !/(^|[._\-\s])(idle_in|idle_out|.*_in|.*_out|.*_to_|to_.*)([._\-\s]|$)/.test(normalized) &&
+      !/(stealth|campfire)/.test(normalized)
+    );
+  };
+
   return (
-    names.find((name) => categoryForAnimation(name) === "Idle") ||
+    names.find((name) => /(^|[._\-\s])idle\d*_base([._\-\s.]|$)/i.test(name)) ||
+    names.find(isStableIdle) ||
     names.find((name) => /idle/i.test(name)) ||
     names[0] ||
     ""
@@ -223,6 +250,30 @@ function preferredAnimationName(names) {
 
 function syncPlayButton() {
   playToggle.textContent = model.paused ? "Play" : "Pause";
+}
+
+function isAdditionalModelMaterial(name) {
+  return /^(mushroom|harmonica|recall_|teemo_recall_|teemo_joke)|discoball|boombox|boogie/i.test(name);
+}
+
+function hideAdditionalModelMaterials() {
+  if (!model.model) {
+    return [];
+  }
+
+  const hiddenMaterials = [];
+
+  model.model.materials.forEach((material) => {
+    if (!isAdditionalModelMaterial(material.name)) {
+      return;
+    }
+
+    material.setAlphaMode("BLEND");
+    material.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 0]);
+    hiddenMaterials.push(material.name);
+  });
+
+  return hiddenMaterials;
 }
 
 function resetAnimationControls(message = "Loading animations...") {
@@ -242,7 +293,8 @@ function resetAnimationControls(message = "Loading animations...") {
 function updateSkinDetails(skin) {
   title.textContent = skin.name;
   skinSelect.value = skin.id;
-  skinMark.textContent = skin.name === "Beemo" ? "B" : viewerCatalog.champion[0];
+  skinArt.src = `${viewerCatalog.artBaseUrl}/${viewerCatalog.champion}_${skin.num}.jpg`;
+  skinArt.alt = `${skin.name} artwork`;
   currentSkinName.textContent = skin.name;
   currentSkinMeta.textContent = `Skin ${skin.id} - ${formatBytes(skin.size)} GLB`;
   model.alt = `${skin.name} 3D model`;
@@ -357,6 +409,7 @@ model.addEventListener("load", () => {
   progressFill.style.transform = "scaleX(1)";
   setStatus("Ready");
   updateSkinDetails(activeSkin);
+  hideAdditionalModelMaterials();
   applyDefaultCamera();
   populateAnimations();
 });
