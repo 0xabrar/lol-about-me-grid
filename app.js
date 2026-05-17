@@ -53,7 +53,7 @@ const elements = {
   profileGrid: document.querySelector("#profile-grid"),
   progressCount: document.querySelector("#progress-count"),
   copyLink: document.querySelector("#copy-link"),
-  exportPng: document.querySelector("#export-png"),
+  copyImage: document.querySelector("#copy-image"),
   toast: document.querySelector("#toast"),
 };
 
@@ -61,8 +61,19 @@ function championImageUrl(champion) {
   return champion.image;
 }
 
+let toastPreviewUrl = "";
+
+function clearToastPreviewUrl() {
+  if (toastPreviewUrl) {
+    URL.revokeObjectURL(toastPreviewUrl);
+    toastPreviewUrl = "";
+  }
+}
+
 function showToast(message, champion = null, detail = "") {
+  clearToastPreviewUrl();
   elements.toast.textContent = "";
+  elements.toast.classList.remove("has-preview");
 
   if (champion) {
     const portrait = document.createElement("img");
@@ -94,6 +105,40 @@ function showToast(message, champion = null, detail = "") {
   showToast.timeout = window.setTimeout(() => {
     elements.toast.classList.remove("is-visible");
   }, 1500);
+}
+
+function showClipboardPreviewToast(previewUrl) {
+  clearToastPreviewUrl();
+  toastPreviewUrl = previewUrl;
+  elements.toast.textContent = "";
+
+  const preview = document.createElement("img");
+  preview.className = "toast-preview";
+  preview.src = previewUrl;
+  preview.alt = "";
+  elements.toast.append(preview);
+
+  const copy = document.createElement("div");
+  copy.className = "toast-copy";
+
+  const title = document.createElement("span");
+  title.className = "toast-title";
+  title.textContent = "Grid copied";
+  copy.append(title);
+
+  const meta = document.createElement("span");
+  meta.className = "toast-meta";
+  meta.textContent = "Ready to paste as an image.";
+  copy.append(meta);
+
+  elements.toast.append(copy);
+
+  elements.toast.classList.add("is-visible", "has-preview");
+  window.clearTimeout(showToast.timeout);
+  showToast.timeout = window.setTimeout(() => {
+    elements.toast.classList.remove("is-visible", "has-preview");
+    clearToastPreviewUrl();
+  }, 2400);
 }
 
 const actionFeedbackTimers = new WeakMap();
@@ -550,7 +595,7 @@ function canvasFont(weight, size, family = canvasFontFamilies.ui) {
   return `${weight} ${size}px ${family}`;
 }
 
-async function exportGridPng() {
+async function createGridPng() {
   if (document.fonts?.ready) {
     await document.fonts.ready;
   }
@@ -650,8 +695,6 @@ async function exportGridPng() {
     ctx.strokeRect(x, y, cellWidth, cellHeight);
   });
 
-  const link = document.createElement("a");
-  link.download = "league-about-me-grid.png";
   const blob = await new Promise((resolve, reject) => {
     canvas.toBlob((result) => {
       if (result) {
@@ -661,10 +704,25 @@ async function exportGridPng() {
       }
     }, "image/png");
   });
-  const url = URL.createObjectURL(blob);
-  link.href = url;
-  link.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+
+  return {
+    blob,
+  };
+}
+
+async function copyGridImageToClipboard() {
+  if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
+    throw new Error("Image clipboard is not supported in this browser");
+  }
+
+  const image = await createGridPng();
+  await navigator.clipboard.write([
+    new ClipboardItem({
+      [image.blob.type]: image.blob,
+    }),
+  ]);
+
+  return URL.createObjectURL(image.blob);
 }
 
 function bindEvents() {
@@ -714,15 +772,16 @@ function bindEvents() {
     }
   });
 
-  elements.exportPng.addEventListener("click", async () => {
-    setActionButtonBusy(elements.exportPng, "Exporting...");
+  elements.copyImage.addEventListener("click", async () => {
+    setActionButtonBusy(elements.copyImage, "Copying...");
     try {
-      await exportGridPng();
-      showActionSuccess(elements.exportPng, "Exported", "PNG exported");
+      const previewUrl = await copyGridImageToClipboard();
+      showActionSuccess(elements.copyImage, "Copied", "Grid image copied");
+      showClipboardPreviewToast(previewUrl);
     } catch (error) {
       console.error(error);
-      restoreActionButton(elements.exportPng);
-      showToast("Export failed. Try again after portraits finish loading.");
+      restoreActionButton(elements.copyImage);
+      showToast("Copy image failed. Try again after portraits finish loading.");
     }
   });
 }

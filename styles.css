@@ -745,6 +745,12 @@ button {
   padding: 9px 16px 9px 9px;
 }
 
+.toast.has-preview {
+  align-items: stretch;
+  width: min(390px, calc(100vw - 44px));
+  padding: 9px 15px 9px 9px;
+}
+
 .toast.is-visible {
   transform: translateY(0);
   opacity: 1;
@@ -759,8 +765,20 @@ button {
   object-fit: cover;
 }
 
+.toast-preview {
+  width: 116px;
+  min-height: 76px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(240, 207, 119, 0.58);
+  border-radius: 7px;
+  background: #050607;
+  object-fit: cover;
+  object-position: top center;
+}
+
 .toast-copy {
   display: grid;
+  align-content: center;
   gap: 3px;
   min-width: 0;
 }
