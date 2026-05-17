@@ -416,51 +416,6 @@ button {
   box-shadow: var(--shadow);
 }
 
-.grid-title {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.55em;
-  padding: 12px 16px 11px;
-  border-bottom: 1px solid rgba(200, 155, 60, 0.24);
-  background:
-    radial-gradient(ellipse 28rem 6rem at 50% 100%, rgba(200, 155, 60, 0.14), transparent 70%),
-    linear-gradient(90deg, rgba(10, 200, 185, 0.06), rgba(200, 155, 60, 0.08));
-  font-family: var(--font-display);
-  line-height: 1.2;
-  text-align: center;
-}
-
-.grid-title::before,
-.grid-title::after {
-  content: "◆";
-  font-family: var(--font-ui);
-  font-size: 0.5em;
-  color: var(--gold);
-  opacity: 0.55;
-  transform: translateY(-1px);
-}
-
-.grid-title h2,
-.grid-title p {
-  margin: 0;
-  align-self: baseline;
-}
-
-.grid-title h2 {
-  font-size: clamp(0.78rem, 1.1vw, 0.92rem);
-  font-weight: 400;
-  color: var(--muted);
-  letter-spacing: 0.04em;
-}
-
-.grid-title p {
-  font-size: clamp(0.95rem, 1.5vw, 1.25rem);
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: 0.015em;
-}
-
 .profile-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -567,18 +522,18 @@ button {
 
 .toast {
   position: fixed;
-  right: 22px;
-  bottom: 22px;
+  right: 26px;
+  bottom: 26px;
   z-index: 10;
   display: flex;
   align-items: center;
   gap: 12px;
-  width: min(312px, calc(100vw - 32px));
-  min-height: 70px;
+  width: fit-content;
+  max-width: min(360px, calc(100vw - 44px));
   transform: translateY(14px);
   border: 1px solid rgba(200, 155, 60, 0.52);
   border-radius: 10px;
-  padding: 9px 14px 9px 9px;
+  padding: 12px 18px;
   background: rgba(7, 9, 13, 0.94);
   backdrop-filter: blur(14px) saturate(128%);
   -webkit-backdrop-filter: blur(14px) saturate(128%);
@@ -594,6 +549,12 @@ button {
   transition:
     opacity 240ms cubic-bezier(0.22, 1, 0.36, 1),
     transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.toast:has(.toast-portrait) {
+  width: min(312px, calc(100vw - 44px));
+  min-height: 70px;
+  padding: 9px 16px 9px 9px;
 }
 
 .toast.is-visible {
