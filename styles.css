@@ -94,16 +94,12 @@ button {
   text-transform: uppercase;
 }
 
-.panel-head h1,
-.topbar h2 {
-  margin: 0;
-  letter-spacing: 0;
-}
-
 .panel-head h1 {
+  margin: 0;
   font-family: var(--font-display);
   font-size: 1.9rem;
   font-weight: 700;
+  letter-spacing: 0;
   line-height: 1.05;
 }
 
@@ -231,13 +227,41 @@ button {
   max-width: 1080px;
 }
 
-.topbar h2 {
-  max-width: 24ch;
+.progress {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-count {
   font-family: var(--font-display);
-  font-size: clamp(1.9rem, 3.2vw, 3rem);
+  font-size: 1.9rem;
   font-weight: 700;
-  line-height: 1.02;
-  text-wrap: balance;
+  line-height: 1;
+  color: var(--gold-2);
+}
+
+.progress-sep {
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+
+.progress-total {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.progress-label {
+  margin-left: 0.5em;
+  color: var(--dim);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .actions {
@@ -327,19 +351,33 @@ button {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 10px;
-  padding: 12px 16px;
+  gap: 0.4em;
+  padding: 14px 18px;
   border-bottom: 1px solid rgba(200, 155, 60, 0.24);
   background: linear-gradient(90deg, rgba(10, 200, 185, 0.08), rgba(200, 155, 60, 0.12));
   font-family: var(--font-display);
-  font-size: clamp(1.25rem, 2.6vw, 2.1rem);
-  font-weight: 700;
   line-height: 1.15;
   text-align: center;
 }
 
-.grid-title span {
+.grid-title h2,
+.grid-title p {
+  margin: 0;
+}
+
+.grid-title h2 {
+  font-size: clamp(1.05rem, 1.8vw, 1.45rem);
+  font-weight: 400;
+  font-style: italic;
   color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+.grid-title p {
+  font-size: clamp(1.4rem, 2.8vw, 2.3rem);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.01em;
 }
 
 .profile-grid {

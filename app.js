@@ -44,9 +44,11 @@ const elements = {
   championFilters: document.querySelector("#champion-filters"),
   profileGrid: document.querySelector("#profile-grid"),
   selectedSlotName: document.querySelector("#selected-slot-name"),
+  progressCount: document.querySelector("#progress-count"),
   clearSlot: document.querySelector("#clear-slot"),
   copyLink: document.querySelector("#copy-link"),
   exportPng: document.querySelector("#export-png"),
+  progressCount: document.querySelector("#progress-count"),
   toast: document.querySelector("#toast"),
 };
 
@@ -169,6 +171,7 @@ function renderChampionList() {
 function renderGrid() {
   elements.profileGrid.innerHTML = "";
   elements.selectedSlotName.textContent = selectedSlot().label;
+  elements.progressCount.textContent = slots.filter((slot) => state.picks[slot.id]).length;
 
   slots.forEach((slot) => {
     const champion = championById(state.picks[slot.id]);
@@ -367,7 +370,7 @@ function init() {
   bindEvents();
   renderChampionFilters();
   loadState();
-  elements.championCount.textContent = `${state.champions.length} bundled champions from Data Dragon ${state.version}`;
+  elements.championCount.textContent = `${state.champions.length} champions`;
   renderGrid();
   renderChampionList();
 }
