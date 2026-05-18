@@ -222,6 +222,13 @@ function paintLoaderProgress(progress) {
   modelLoaderPercent.textContent = `${percent}%`;
 }
 
+function resetLoaderProgress() {
+  modelLoaderFill.classList.add("is-resetting");
+  paintLoaderProgress(0);
+  modelLoaderFill.getBoundingClientRect();
+  modelLoaderFill.classList.remove("is-resetting");
+}
+
 function stopLoaderProgress() {
   if (loaderFrame) {
     cancelAnimationFrame(loaderFrame);
@@ -235,12 +242,11 @@ function runLoaderProgress() {
   }
 
   const elapsed = performance.now() - loaderStartedAt;
-  const simulatedProgress = Math.min(0.92, 0.16 + (1 - Math.exp(-elapsed / 2400)) * 0.76);
+  const simulatedProgress = Math.min(0.92, (1 - Math.exp(-elapsed / 2600)) * 0.92);
   const measuredTarget = Math.min(measuredLoadProgress * 0.96, 0.96);
   const target = Math.max(simulatedProgress, measuredTarget);
-  const maxStep = 0.0048;
-  const delta = target - displayedLoadProgress;
-  displayedLoadProgress += Math.max(0, Math.min(maxStep, delta * 0.045));
+  const nextProgress = displayedLoadProgress + (target - displayedLoadProgress) * 0.06;
+  displayedLoadProgress = Math.max(displayedLoadProgress, Math.min(target, nextProgress));
 
   paintLoaderProgress(displayedLoadProgress);
   const percent = Math.floor(displayedLoadProgress * 100);
@@ -252,7 +258,6 @@ function runLoaderProgress() {
 function setModelLoading(isLoading, label = "Loading skin...") {
   stopLoaderProgress();
   isModelLoading = isLoading;
-  modelLoader.classList.toggle("is-visible", isLoading);
   modelLoaderLabel.textContent = label;
   skinSelect.disabled = isLoading;
 
@@ -260,11 +265,13 @@ function setModelLoading(isLoading, label = "Loading skin...") {
     loaderStartedAt = performance.now();
     measuredLoadProgress = 0;
     displayedLoadProgress = 0;
-    paintLoaderProgress(0);
+    resetLoaderProgress();
+    modelLoader.classList.add("is-visible");
     loaderFrame = requestAnimationFrame(runLoaderProgress);
   } else {
     displayedLoadProgress = 1;
     paintLoaderProgress(1);
+    modelLoader.classList.remove("is-visible");
   }
 }
 

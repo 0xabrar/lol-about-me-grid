@@ -519,6 +519,10 @@ button {
   transition: transform 220ms linear;
 }
 
+.model-loader-track span.is-resetting {
+  transition: none;
+}
+
 .model-loader-percent {
   color: var(--muted);
   font-size: 0.8rem;
