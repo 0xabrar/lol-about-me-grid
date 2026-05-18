@@ -183,6 +183,8 @@ const skinArt = document.querySelector("#skin-art");
 const currentSkinName = document.querySelector("#current-skin-name");
 const currentSkinMeta = document.querySelector("#current-skin-meta");
 const progressFill = document.querySelector("#model-progress-fill");
+const modelLoader = document.querySelector("#model-loader");
+const modelLoaderLabel = document.querySelector("#model-loader-label");
 const animationSelect = document.querySelector("#animation-select");
 const animationCount = document.querySelector("#animation-count");
 const playToggle = document.querySelector("#play-toggle");
@@ -201,9 +203,50 @@ const defaultCamera = {
 let activeSkin = viewerCatalog.skins[0];
 let isModelLoading = false;
 let activeAnimationDuration = 0;
+const prefetchedAssets = new Set();
 
 function setStatus(value) {
   status.textContent = value;
+}
+
+function setModelLoading(isLoading, label = "Loading skin...") {
+  isModelLoading = isLoading;
+  modelLoader.classList.toggle("is-visible", isLoading);
+  modelLoaderLabel.textContent = label;
+  skinSelect.disabled = isLoading;
+}
+
+function prefetchModelAsset(skin) {
+  if (!skin || prefetchedAssets.has(skin.asset)) {
+    return;
+  }
+
+  prefetchedAssets.add(skin.asset);
+  const link = document.createElement("link");
+  link.rel = "prefetch";
+  link.as = "fetch";
+  link.href = skin.asset;
+  link.crossOrigin = "anonymous";
+  document.head.append(link);
+}
+
+function prefetchNeighborSkins(skin) {
+  const index = viewerCatalog.skins.findIndex((entry) => entry.id === skin.id);
+
+  if (index < 0) {
+    return;
+  }
+
+  const queuePrefetch = () => {
+    prefetchModelAsset(viewerCatalog.skins[index + 1]);
+    prefetchModelAsset(viewerCatalog.skins[index - 1]);
+  };
+
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(queuePrefetch, { timeout: 1800 });
+  } else {
+    window.setTimeout(queuePrefetch, 450);
+  }
 }
 
 function formatSeconds(value) {
@@ -307,13 +350,17 @@ function updateSkinDetails(skin) {
 }
 
 function selectSkin(skinId) {
+  if (isModelLoading) {
+    return;
+  }
+
   const nextSkin = viewerCatalog.skins.find((skin) => skin.id === skinId) || viewerCatalog.skins[0];
   activeSkin = nextSkin;
 
   model.pause();
   model.animationName = "";
   progressFill.style.transform = "scaleX(0)";
-  isModelLoading = true;
+  setModelLoading(true, `Loading ${nextSkin.name}...`);
   setStatus("Loading");
   resetAnimationControls();
   updateSkinDetails(nextSkin);
@@ -408,22 +455,25 @@ model.addEventListener("progress", (event) => {
   progressFill.style.transform = `scaleX(${progress})`;
 
   if (isModelLoading && progress < 1) {
-    setStatus(`${Math.round(progress * 100)}%`);
+    const percent = Math.round(progress * 100);
+    setStatus(`${percent}%`);
+    modelLoaderLabel.textContent = `Loading ${activeSkin.name}... ${percent}%`;
   }
 });
 
 model.addEventListener("load", () => {
-  isModelLoading = false;
+  setModelLoading(false);
   progressFill.style.transform = "scaleX(1)";
   setStatus("Ready");
   updateSkinDetails(activeSkin);
   hideAdditionalModelMaterials();
   applyDefaultCamera();
   populateAnimations();
+  prefetchNeighborSkins(activeSkin);
 });
 
 model.addEventListener("error", () => {
-  isModelLoading = false;
+  setModelLoading(false);
   setStatus("Model failed");
   resetAnimationControls("Model failed");
 });
