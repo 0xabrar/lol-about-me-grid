@@ -9,6 +9,7 @@ const contentTypes = {
   ".css": "text/css; charset=utf-8",
   ".glb": "model/gltf-binary",
   ".html": "text/html; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".png": "image/png",
   ".webp": "image/webp",
@@ -23,7 +24,12 @@ function sendFile(response, filePath) {
 
 function resolvePath(urlPath) {
   const pathname = decodeURIComponent(urlPath.split("?")[0]);
-  const routeFile = pathname === "/viewer" || pathname === "/viewer/" ? "viewer/index.html" : "";
+  const routeFile =
+    pathname === "/viewer" || pathname === "/viewer/"
+      ? "viewer/index.html"
+      : pathname === "/counters" || pathname === "/counters/"
+        ? "counters/index.html"
+        : "";
 
   if (routeFile) {
     const routePath = resolve(root, routeFile);

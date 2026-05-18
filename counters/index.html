@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="League of Legends counterpick explorer using matchup deltas instead of raw win rate."
+    >
+    <title>CounterLab: League of Legends</title>
+    <base href="/">
+    <link rel="icon" href="data:,">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Marcellus&family=Source+Sans+3:wght@400..900&display=swap"
+    >
+    <link rel="stylesheet" href="counters/counters.css">
+  </head>
+  <body>
+    <main class="counter-shell">
+      <aside class="counter-rail" aria-label="Counter controls">
+        <a class="home-link" href="/">About-me grid</a>
+        <div class="brand-block">
+          <p class="eyebrow">CounterLab</p>
+          <h1>Lane impact beats fake win rate.</h1>
+          <p class="rail-copy">
+            Pick a lane and champion. Counters rank by lane impact, not raw win rate.
+          </p>
+        </div>
+
+        <label class="field-label" for="lane-select">Lane</label>
+        <select id="lane-select" class="target-select"></select>
+
+        <label class="field-label" for="target-select">Champion to counter</label>
+        <select id="target-select" class="target-select"></select>
+
+        <div class="rail-spacer"></div>
+      </aside>
+
+      <section class="counter-board">
+        <header class="board-header">
+          <div>
+            <p class="eyebrow">Prototype from Riot-accessible data</p>
+            <h2 id="board-title">Counters</h2>
+          </div>
+          <div class="data-pill" id="data-status">Loading data</div>
+        </header>
+
+        <section class="model-strip" aria-label="Score model">
+          <article>
+            <strong>Win delta</strong>
+            <span>baseline-adjusted</span>
+          </article>
+          <article>
+            <strong>Gold @ 15</strong>
+            <span>lane pressure</span>
+          </article>
+          <article>
+            <strong>XP @ 15</strong>
+            <span>denial / recalls</span>
+          </article>
+          <article>
+            <strong>CS @ 15</strong>
+            <span>stable control</span>
+          </article>
+          <article>
+            <strong>Early K/D</strong>
+            <span>snowball risk</span>
+          </article>
+        </section>
+
+        <section class="source-panel" aria-label="Dataset source">
+          <div>
+            <p class="eyebrow">Dataset Source</p>
+            <h3>GPTilt Challenger 10k</h3>
+          </div>
+          <dl>
+            <div>
+              <dt>Population</dt>
+              <dd>Challenger only</dd>
+            </div>
+            <div>
+              <dt>Regions</dt>
+              <dd>Americas, Asia, Europe</dd>
+            </div>
+            <div>
+              <dt>Scale</dt>
+              <dd>10k matches · 15.1M rows</dd>
+            </div>
+            <div>
+              <dt>Use</dt>
+              <dd>Static prototype</dd>
+            </div>
+          </dl>
+        </section>
+
+        <div id="counter-list" class="counter-list" aria-live="polite"></div>
+
+        <section class="evidence-grid">
+          <article>
+            <h3>Signals</h3>
+            <ul id="available-fields"></ul>
+          </article>
+          <article>
+            <h3>Next Data Step</h3>
+            <ol>
+              <li>Keep lane-matched joins.</li>
+              <li>Raise sample thresholds.</li>
+              <li>Segment by patch, rank, and region.</li>
+              <li>Replace GPTilt with live Riot ingestion.</li>
+            </ol>
+          </article>
+        </section>
+
+        <section class="methodology" aria-labelledby="methodology-title">
+          <p class="eyebrow">Methodology</p>
+          <h3 id="methodology-title">How the counter score is built</h3>
+
+          <div class="method-grid">
+            <article>
+              <span class="step-number">01</span>
+              <h4>Same lane only</h4>
+              <p>`matchId` + opposite team + same `teamPosition`.</p>
+            </article>
+
+            <article>
+              <span class="step-number">02</span>
+              <h4>15-minute lane state</h4>
+              <p>Nearest 15:00 frame for gold, XP, and CS deltas.</p>
+            </article>
+
+            <article>
+              <span class="step-number">03</span>
+              <h4>Baseline adjusted</h4>
+              <p>Matchup performance minus that champion's lane average.</p>
+            </article>
+
+            <article>
+              <span class="step-number">04</span>
+              <h4>Lane first</h4>
+              <p>Counter score weights lane score more than game result.</p>
+            </article>
+          </div>
+
+          <div class="formula-box">
+            <div>
+              <strong>Lane score</strong>
+              <code>gold15 + xp15 + cs15 + K/D</code>
+            </div>
+            <div>
+              <strong>Game score</strong>
+              <code>win-rate delta + damage delta</code>
+            </div>
+            <div>
+              <strong>Counter score</strong>
+              <code>62% lane score + 38% game score</code>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="counters/counters.js"></script>
+  </body>
+</html>
