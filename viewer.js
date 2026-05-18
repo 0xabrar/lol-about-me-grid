@@ -185,8 +185,6 @@ const currentSkinMeta = document.querySelector("#current-skin-meta");
 const progressFill = document.querySelector("#model-progress-fill");
 const modelLoader = document.querySelector("#model-loader");
 const modelLoaderLabel = document.querySelector("#model-loader-label");
-const modelLoaderFill = document.querySelector("#model-loader-fill");
-const modelLoaderPercent = document.querySelector("#model-loader-percent");
 const animationSelect = document.querySelector("#animation-select");
 const animationCount = document.querySelector("#animation-count");
 const playToggle = document.querySelector("#play-toggle");
@@ -206,73 +204,16 @@ let activeSkin = viewerCatalog.skins[0];
 let isModelLoading = false;
 let activeAnimationDuration = 0;
 const prefetchedAssets = new Set();
-let loaderFrame = 0;
-let loaderStartedAt = 0;
-let measuredLoadProgress = 0;
-let displayedLoadProgress = 0;
 
 function setStatus(value) {
   status.textContent = value;
 }
 
-function paintLoaderProgress(progress) {
-  const clamped = Math.max(0, Math.min(1, progress));
-  const percent = Math.round(clamped * 100);
-  modelLoaderFill.style.transform = `scaleX(${clamped})`;
-  modelLoaderPercent.textContent = `${percent}%`;
-}
-
-function resetLoaderProgress() {
-  modelLoaderFill.classList.add("is-resetting");
-  paintLoaderProgress(0);
-  modelLoaderFill.getBoundingClientRect();
-  modelLoaderFill.classList.remove("is-resetting");
-}
-
-function stopLoaderProgress() {
-  if (loaderFrame) {
-    cancelAnimationFrame(loaderFrame);
-    loaderFrame = 0;
-  }
-}
-
-function runLoaderProgress() {
-  if (!isModelLoading) {
-    return;
-  }
-
-  const elapsed = performance.now() - loaderStartedAt;
-  const simulatedProgress = Math.min(0.92, (1 - Math.exp(-elapsed / 2600)) * 0.92);
-  const measuredTarget = Math.min(measuredLoadProgress * 0.96, 0.96);
-  const target = Math.max(simulatedProgress, measuredTarget);
-  const nextProgress = displayedLoadProgress + (target - displayedLoadProgress) * 0.06;
-  displayedLoadProgress = Math.max(displayedLoadProgress, Math.min(target, nextProgress));
-
-  paintLoaderProgress(displayedLoadProgress);
-  const percent = Math.floor(displayedLoadProgress * 100);
-  setStatus(`${percent}%`);
-  modelLoaderLabel.textContent = `Loading ${activeSkin.name}...`;
-  loaderFrame = requestAnimationFrame(runLoaderProgress);
-}
-
 function setModelLoading(isLoading, label = "Loading skin...") {
-  stopLoaderProgress();
   isModelLoading = isLoading;
   modelLoaderLabel.textContent = label;
   skinSelect.disabled = isLoading;
-
-  if (isLoading) {
-    loaderStartedAt = performance.now();
-    measuredLoadProgress = 0;
-    displayedLoadProgress = 0;
-    resetLoaderProgress();
-    modelLoader.classList.add("is-visible");
-    loaderFrame = requestAnimationFrame(runLoaderProgress);
-  } else {
-    displayedLoadProgress = 1;
-    paintLoaderProgress(1);
-    modelLoader.classList.remove("is-visible");
-  }
+  modelLoader.classList.toggle("is-visible", isLoading);
 }
 
 function prefetchModelAsset(skin) {
@@ -512,12 +453,9 @@ function populateSkins() {
 model.addEventListener("progress", (event) => {
   const progress = Math.max(0, Math.min(1, event.detail.totalProgress || 0));
   progressFill.style.transform = `scaleX(${progress})`;
-  measuredLoadProgress = Math.max(measuredLoadProgress, progress);
 });
 
 model.addEventListener("load", () => {
-  stopLoaderProgress();
-  paintLoaderProgress(1);
   progressFill.style.transform = "scaleX(1)";
   setStatus("Ready");
   updateSkinDetails(activeSkin);
