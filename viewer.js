@@ -238,10 +238,12 @@ function runLoaderProgress() {
   const simulatedProgress = Math.min(0.92, 0.16 + (1 - Math.exp(-elapsed / 2400)) * 0.76);
   const measuredTarget = Math.min(measuredLoadProgress * 0.96, 0.96);
   const target = Math.max(simulatedProgress, measuredTarget);
-  displayedLoadProgress += (target - displayedLoadProgress) * 0.08;
+  const maxStep = 0.0048;
+  const delta = target - displayedLoadProgress;
+  displayedLoadProgress += Math.max(0, Math.min(maxStep, delta * 0.045));
 
   paintLoaderProgress(displayedLoadProgress);
-  const percent = Math.round(displayedLoadProgress * 100);
+  const percent = Math.floor(displayedLoadProgress * 100);
   setStatus(`${percent}%`);
   modelLoaderLabel.textContent = `Loading ${activeSkin.name}...`;
   loaderFrame = requestAnimationFrame(runLoaderProgress);

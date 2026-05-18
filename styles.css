@@ -516,6 +516,7 @@ button {
   box-shadow: 0 0 22px rgba(10, 200, 185, 0.28);
   transform: scaleX(0);
   transform-origin: left center;
+  transition: transform 220ms linear;
 }
 
 .model-loader-percent {
